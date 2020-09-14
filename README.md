@@ -128,9 +128,11 @@ b.	* Note the function does not lag the volatility, and the number of rows for D
 
 ### Main Analysis Function
 
-Vol_Analysis(StockDF, VXDF)
+* Vol_Analysis(StockDF, VXDF)
+	
 	* The main analysis function passes in the stock data frame and the volatility data frames. Each data frame must have the same number of rows, the stock data frame, StockDF, must have daily closes titled “Close” and daily volume titled “Volume,” while the volatility data frame, VXDF, must only have daily volatility closes titled “Close”
 		* See function dictionary and RMD file for additional information
+	
 	* The function returns a list of lists
 		* DeltaVol contains the first 4 regressions answering question 1
 		* IncVol contains the next 4 regressions (5-8) answering question 2
