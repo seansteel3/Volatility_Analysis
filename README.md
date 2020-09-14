@@ -126,6 +126,18 @@ b.	* Note the function does not lag the volatility, and the number of rows for D
 	* This function obtains the average partial effect (APE) for the first 8 regressions in the main function. These regressions use dplyr::lag which the margins package does not currently recognize in R version 4.0.3
 	* Returns the APE and the boot strapped standard error.
 
+### Main Analysis Function
+
+Vol_Analysis(StockDF, VXDF)
+	* The main analysis function passes in the stock data frame and the volatility data frames. Each data frame must have the same number of rows, the stock data frame, StockDF, must have daily closes titled “Close” and daily volume titled “Volume,” while the volatility data frame, VXDF, must only have daily volatility closes titled “Close”
+		* See function dictionary and RMD file for additional information
+	* The function returns a list of lists
+		* DeltaVol contains the first 4 regressions answering question 1
+		* IncVol contains the next 4 regressions (5-8) answering question 2
+		* RefGroup contains the next 12 regressions (9-20) showing if the reference group (-2.5% to 2.5% volatility change) has predictive power on subsequent stock prices
+		* Groups contains the last 12 regressions (21-32) showing if any volatility change groups have statistically different predive power over the reference group.
+		* Results contains a data frame with the regression estimate for the group, the change in the Odds Ratio (OR), the APE and its standard error, the estimate standard error, and the raw and corrected p-values for the regressions.
+
 
 <!-- CONTACT -->
 ## Contact
