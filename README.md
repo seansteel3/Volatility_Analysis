@@ -151,13 +151,9 @@ Email: sean.steele.a@gmail.com
 <!-- ACKNOWLEDGEMENTS -->
 ## Acknowledgements
 
-* Thanks to Kelsey Maccuish for helping with testing.
+* Thanks to Don Steele for helping with sparking the ideas of the project.
 
-* References to Kurcika et al. https://www.acpjournals.org/doi/10.7326/M20-1495
 
-* References to Andrew N. Cohen, Bruce Kessel https://www.medrxiv.org/content/10.1101/2020.04.26.20080911v1.full.pdf
-
-* References to AP reporting on CDC estimates for COVID19 serological prevalence https://www.nwherald.com/2020/07/21/cdc-antibody-tests-show-virus-rates-10x-higher/afvoinh/
 
 
 
