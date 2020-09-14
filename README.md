@@ -78,26 +78,50 @@ Reference Group Regression:
 ∆Stock Price= β_0+β_1*Group3+β_2*Volume+ ε
 
 Main Group Regression:
-∆Stock Price= β_0+β_1*Group1+ β_2*Group2+ β_3*Group4 + β_5*Group5+ β_6*Volume+ ε
+∆Stock Price= β_0+β_1*Group1+ β_2*Group2+ β_3*Group4 + β_5*Group5+ β_6*Volume+ 
+
+These questions do not encompass all the possible short-term signals volatility or volatility 
+changes could possibly entail. However, these questions do encompass a subset of highly useful signals if volatility alone does in fact have predative power.  Further, these HQs are testable with logistic regressions after minor data wrangling to convert stock price into a binary response variable (1 = increase in price, 0 = decrease in price). 
+
+In order to answer the main HQs, 32 regressions were run. Running this many regressions individually for every stock and its volatility would not be feasible for multiple stocks, thus the Volatility_Analysis_Function was constructed in R to simultaneously run and quickly display the regression results for any stock and its volatility measure. See function dictionary and RMD file for further details.
 
 
-#### Example 
+### A note on P-value correction 
 
-Input:
-```JS
-TESTVEC <- c("N", "N", "P")
-COVIDTESTProbability(Want = "Positive", Time = 1, Region = "FL", TestVec = TESTVEC)
-```
-Return:
+The Volatility_Analysis_Function generates 32 regressions with related hypothesis tests drawn from the same data. Using the usual p=0.05 cut off threshold would not be accurate and would likely generate false positives. When predicting stock price movement, the ultimate goal is to make money, and using a false signal can have dire real-world consequences, while disregarding a true signal only limits a stock trader’s “toolbox.” While this can indeed result in negative outcomes, it is unclear and difficult to quantify a priori how negative those consequences may be. 
 
-```JS
-[1] The percent chance you are positive is estimated to be
-[2] 93.7                                                  
-[3] and with 95% confidence is between                    
-[4] 51.6                                                  
-[5] and                                                   
-[6] 98.7  
-```
+Therefore, the main function also corrects the regression p-values in the Results data frame using a Bonferroni correction. This correction was chosen since a relatively small number of regressions have been run, and because of its high penalty upon potential false positives. However, because a Bonferroni correction requires independence between hypothesis tests, and since all the main hypothesis questions are not independent, the correction is applied separately within each of the three main HQs. Thus, the corrected p-values are still only closer to the “true” p-values and should be used with some caution.
+
+### Prerequired functions
+
+To answer the above main H. Qs. questions, a significant amount of data munging was required. A series of custom functions was incrementally created to tailor the raw data to the hypothesis tests at hand. See RMD file for additional comments and details.
+
+1.	Volatility_Change_DF(DF1, DF2, time)
+a.	The function passes in the stock and volatility data frames and a “time” argument, then returns a new data frame with the percentage differences between the daily close for both the stock and the volatility on day i to the close on day i + time.
+i.	Function passes in the stock price data frame, which must include the daily close prices titled at “Close” and the daily volume titled “Volume” in the argument “DF1.”
+ii.	Function passes in the daily volatility data frame which must have daily close volatility titled “Close” in the argument “DF2”. 
+iii.	The “time” argument refers to the number of days to compare. IE: time=3 will compare the difference in both stock and volatility daily closes on day i to day i + 3
+b.	 Note the function does not lag the volatility, and the number of rows for DF1 must equal the number of rows in DF2.
+2.	Volatility_DF(DF1, DF2, time)
+a.	The function is identical to the Volatility_Change_DF function above in its inputs. However the data frame output does not have the difference in volatility, but instead the volatility value itself.
+b.	Note the function does not lag the volatility, and the number of rows for DF1 must equal the number of rows in DF2.
+3.	Shift(DF, n)
+a.	The function passes in a data frame or column of a data frame and lags the data frame or column by n days.
+b.	Note the first n entries will be lost, and n NA rows will be added to the end to preserve data frame or columns size. This function is only needed inside the function VX_jump.
+4.	VX_jump(Stock_DF, VX_DF, days_Stock, days_VX)
+a.	The function passes in the stock and volatility data frames as well as separate arguments for the number of days to be compared: i days for the comparison stock price closes and j days for the comparison of daily volatility closes. The function returns a new data frame with the % differences for daily stock closes from day i to i + days_Stock, and the % differences for daily volatility from day j to j + days_VX. The function also creates grouping variable to assign percentage volatility changes.
+i.	The function passes in the stock data frame which must include the daily close prices titled at “Close” and the daily volume titled “Volume” in the argument “Stock_DF”
+ii.	 The function passes in the volatility data frame which must include the daily close titled at “Close” in the argument “VX_DF”
+iii.	The “days_Stock” argument sets the number of days to compare for the daily stock price closes. 
+iv.	The “days_VX” argument sets the number of days to compare for the daily volatility closes. 
+b.	Note this function does lag the volatility, and the stock and volatility data frames must have the same number of rows.
+5.	SE_boot(reps, data = PE_DF)
+a.	This function creates boot strapped standard errors for the custom function “logis_APE”
+6.	logis_APE(Reg, DF)
+a.	This function obtains the average partial effect (APE) for the first 8 regressions in the main function. These regressions use dplyr::lag which the margins package does not currently recognize in R version 4.0.3
+b.	Returns the APE and the boot strapped standard error.
+
+
 <!-- CONTACT -->
 ## Contact
 
