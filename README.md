@@ -97,29 +97,34 @@ Therefore, the main function also corrects the regression p-values in the Result
 To answer the above main H. Qs. questions, a significant amount of data munging was required. A series of custom functions was incrementally created to tailor the raw data to the hypothesis tests at hand. See RMD file for additional comments and details.
 
 1.	Volatility_Change_DF(DF1, DF2, time)
-a.	The function passes in the stock and volatility data frames and a “time” argument, then returns a new data frame with the percentage differences between the daily close for both the stock and the volatility on day i to the close on day i + time.
-i.	Function passes in the stock price data frame, which must include the daily close prices titled at “Close” and the daily volume titled “Volume” in the argument “DF1.”
-ii.	Function passes in the daily volatility data frame which must have daily close volatility titled “Close” in the argument “DF2”. 
-iii.	The “time” argument refers to the number of days to compare. IE: time=3 will compare the difference in both stock and volatility daily closes on day i to day i + 3
-b.	 Note the function does not lag the volatility, and the number of rows for DF1 must equal the number of rows in DF2.
+ 	* The function passes in the stock and volatility data frames and a “time” argument, then returns a new data frame with the percentage differences between the daily close for both the stock and the volatility on day i to the close on day i + time.
+	* Function passes in the stock price data frame, which must include the daily close prices titled at “Close” and the daily volume titled “Volume” in the argument “DF1.”
+	* Function passes in the daily volatility data frame which must have daily close volatility titled “Close” in the argument “DF2”. 
+	* The “time” argument refers to the number of days to compare. IE: time=3 will compare the difference in both stock and volatility daily closes on day i to day i + 3
+b.	* Note the function does not lag the volatility, and the number of rows for DF1 must equal the number of rows in DF2.
+
 2.	Volatility_DF(DF1, DF2, time)
-a.	The function is identical to the Volatility_Change_DF function above in its inputs. However the data frame output does not have the difference in volatility, but instead the volatility value itself.
-b.	Note the function does not lag the volatility, and the number of rows for DF1 must equal the number of rows in DF2.
+	* The function is identical to the Volatility_Change_DF function above in its inputs. However the data frame output does not have the difference in volatility, but instead the volatility value itself.
+	* Note the function does not lag the volatility, and the number of rows for DF1 must equal the number of rows in DF2.
+
 3.	Shift(DF, n)
-a.	The function passes in a data frame or column of a data frame and lags the data frame or column by n days.
-b.	Note the first n entries will be lost, and n NA rows will be added to the end to preserve data frame or columns size. This function is only needed inside the function VX_jump.
+	* The function passes in a data frame or column of a data frame and lags the data frame or column by n days.
+	* Note the first n entries will be lost, and n NA rows will be added to the end to preserve data frame or columns size. This function is only needed inside the function VX_jump.
+
 4.	VX_jump(Stock_DF, VX_DF, days_Stock, days_VX)
-a.	The function passes in the stock and volatility data frames as well as separate arguments for the number of days to be compared: i days for the comparison stock price closes and j days for the comparison of daily volatility closes. The function returns a new data frame with the % differences for daily stock closes from day i to i + days_Stock, and the % differences for daily volatility from day j to j + days_VX. The function also creates grouping variable to assign percentage volatility changes.
-i.	The function passes in the stock data frame which must include the daily close prices titled at “Close” and the daily volume titled “Volume” in the argument “Stock_DF”
-ii.	 The function passes in the volatility data frame which must include the daily close titled at “Close” in the argument “VX_DF”
-iii.	The “days_Stock” argument sets the number of days to compare for the daily stock price closes. 
-iv.	The “days_VX” argument sets the number of days to compare for the daily volatility closes. 
-b.	Note this function does lag the volatility, and the stock and volatility data frames must have the same number of rows.
+	* The function passes in the stock and volatility data frames as well as separate arguments for the number of days to be compared: i days for the comparison stock price closes and j days for the comparison of daily volatility closes. The function returns a new data frame with the % differences for daily stock closes from day i to i + days_Stock, and the % differences for daily volatility from day j to j + days_VX. The function also creates grouping variable to assign percentage volatility changes.
+		* The function passes in the stock data frame which must include the daily close prices titled at “Close” and the daily volume titled “Volume” in the argument “Stock_DF”
+		* The function passes in the volatility data frame which must include the daily close titled at “Close” in the argument “VX_DF”
+		* The “days_Stock” argument sets the number of days to compare for the daily stock price closes. 
+		* The “days_VX” argument sets the number of days to compare for the daily volatility closes. 
+	* Note this function does lag the volatility, and the stock and volatility data frames must have the same number of rows.
+
 5.	SE_boot(reps, data = PE_DF)
-a.	This function creates boot strapped standard errors for the custom function “logis_APE”
+	* This function creates boot strapped standard errors for the custom function “logis_APE”
+
 6.	logis_APE(Reg, DF)
-a.	This function obtains the average partial effect (APE) for the first 8 regressions in the main function. These regressions use dplyr::lag which the margins package does not currently recognize in R version 4.0.3
-b.	Returns the APE and the boot strapped standard error.
+	* This function obtains the average partial effect (APE) for the first 8 regressions in the main function. These regressions use dplyr::lag which the margins package does not currently recognize in R version 4.0.3
+	* Returns the APE and the boot strapped standard error.
 
 
 <!-- CONTACT -->
