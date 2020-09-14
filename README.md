@@ -5,14 +5,14 @@ This project includes a function running and returning a series of 32 logistic r
 <!-- TABLE OF CONTENTS -->
 ## Table of Contents
 
-* [About the Project](#about-the-project)
-  * [Motivations and Purpose](#motivations-and-purpose)
-  * [Limitations](#limitations)
-* [Getting Started](#getting-started)
-  * [Requirements](#requirements)
+* [Introduction](#Introduction)
+* [Methods](#Methods)
+  * [Requirements](#Requirements)
   * [Code Organization](#code-organization)
-  * [Set Up](#set-up)
-  * [Usage](#usage)
+  * [Methodology](#Metholdology)
+  * [A note on P-value correction](#A-note-on-P-value-correction)
+  * [Prerequired Functions](#Prequired-Functions)
+  * [Main Function](#Main-Function)
 * [Contact](#contact)
 * [Acknowledgements](#acknowledgements)
 
@@ -92,7 +92,7 @@ The Volatility_Analysis_Function generates 32 regressions with related hypothesi
 
 Therefore, the main function also corrects the regression p-values in the Results data frame using a Bonferroni correction. This correction was chosen since a relatively small number of regressions have been run, and because of its high penalty upon potential false positives. However, because a Bonferroni correction requires independence between hypothesis tests, and since all the main hypothesis questions are not independent, the correction is applied separately within each of the three main HQs. Thus, the corrected p-values are still only closer to the “true” p-values and should be used with some caution.
 
-### Prerequired functions
+### Prerequired Functions
 
 To answer the above main H. Qs. questions, a significant amount of data munging was required. A series of custom functions was incrementally created to tailor the raw data to the hypothesis tests at hand. See RMD file for additional comments and details.
 
