@@ -127,7 +127,7 @@ b.	* Note the function does not lag the volatility, and the number of rows for D
 	* This function obtains the average partial effect (APE) for the first 8 regressions in the main function. These regressions use dplyr::lag which the margins package does not currently recognize in R version 4.0.3
 	* Returns the APE and the boot strapped standard error.
 
-### Main Analysis Function
+### Main Function
 
 * Vol_Analysis(StockDF, VXDF)
 	
@@ -142,7 +142,7 @@ b.	* Note the function does not lag the volatility, and the number of rows for D
 		* Results contains a data frame with the regression estimate for the group, the change in the Odds Ratio (OR), the APE and its standard error, the estimate standard error, and the raw and corrected p-values for the regressions.
 
 <!-- RESULTS AND CONCLUSION -->
-##Results and Conclusion
+### Results and Conclusion
 
 The regression results are mixed for the 8 major stocks and indices chosen in this analysis. Three of the stocks, Goldman Sachs, Apple, and Amazon return all 32 regressions as insignificant at the 5% level after Bonferroni corrections, and Apple and Amazon return all regressions as insignificant even before Bonferroni corrections. 
 
