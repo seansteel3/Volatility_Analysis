@@ -18,9 +18,9 @@ This project includes a function running and returning a series of 32 logistic r
 
 <!-- Introduction -->
 ## Introduction
-The initial motivation for this project came from discussions with my father about investment strategies. In particular, some of the personal indicators of stock or market weakness are volatility indices, such as the popular S&P volatility index, VIX, made by the Cboe. However, investor help and educational sources such as Investopedia and MarketWatch have noted that volatility does not predict upward or downward trends on its own. 
+The initial motivation for this project came from discussions with my father about investment strategies. In particular, some of the personal indicators of stock or market weakness are volatility indices, such as the popular S&P volatility index, VIX, made by the Cboe. However, investor help and educational sources such as Investopedia<sub>1 </sub> and Sparrow Wealth<sub>2 </sub> have noted that volatility does not predict upward or downward trends on its own. 
 
-Even so, indices such as the VIX have been called “the fear index” and if enough traders believe increases in volatility precede short term downward trends in stock price, then it may become a “self-fulfilling prophecy.”  Therefore, the overarching goal of this project is to ascertain if short term changes in implied volatility can predict short term changes in stock price. 
+Even so, indices such as the VIX have been called “the fear index”<sub>3 </sub> and if enough traders believe increases in volatility precede short term downward trends in stock price, then it may become a “self-fulfilling prophecy.”  Therefore, the overarching goal of this project is to ascertain if short term changes in implied volatility can predict short term changes in stock price. 
 
 <!-- Methods -->
 ## Methods
@@ -140,6 +140,18 @@ b.	* Note the function does not lag the volatility, and the number of rows for D
 		* Groups contains the last 12 regressions (21-32) showing if any volatility change groups have statistically different predive power over the reference group.
 		* Results contains a data frame with the regression estimate for the group, the change in the Odds Ratio (OR), the APE and its standard error, the estimate standard error, and the raw and corrected p-values for the regressions.
 
+<!-- RESULTS AND CONCLUSION -->
+##Results and Conclusion
+
+The regression results are mixed for the 8 major stocks and indices chosen in this analysis. Three of the stocks, Goldman Sachs, Apple, and Amazon return all 32 regressions as insignificant at the 5% level after Bonferroni corrections, and Apple and Amazon return all regressions as insignificant even before Bonferroni corrections. 
+
+The other 5 stocks analyzed do not return entirely consistent results between each other. For instance, IBM, Google, and the Russel 2000 all show significance at the 5% level for the dVol_day1 regressions, but the Russel 2000 also shows significance for the dVol_day5 and dVol_day10, while Google and IBM do not. Additionally, the NASDAQ shows no significance for any of the dVol regressions but does show significance at the 5% level for the Groups5.5 and Groups10.5 regressions. Further the DeltaVol_Day1 regression, which was significant for the DOW Jones, has a fairly high standard error for the estimate (0.403) and a fairly low APE (0.0007). Implying that the real-world value, even if statistically significant, may be low. Additionally, the significant regressions for the NASDAQ, Groups5.5 and Groups10.5 do indicate that group 1 (< -10% changes in volatility) have a statistically different predictive power over the insignificant base group (-2.5% to 2.5% changes in volatility), but the Groups5.5 and Groups10.5 respective odds ratios (1.33 and 1.54) and APEs (0.061 and 0.060) do not imply a substantial real world difference.
+
+Of all of the stocks analyzed, only the Russel 2000 dVol_Day1, dVol_Day5, and dVol_Day10 regressions show significance and considerable odds ratios (0.994, 0.988, 0.985 per one unit increase in volatility respectively) and APE’s (-0.034, -0.071, -0.086 per one unit increase in volatility respectively). 
+
+In conclusion, the lack of a clear consistency of which regressions return significant as well as a general lack of real world substantiality to most of the regressions which did return significant, results in a failure to reject the overall hypothesis that volatility alone, when controlling for daily trade volume, cannot predict upwards and downwards trends in stock price. However, in some cases it is possible that changes in volatility may yield some predictive power, but as a whole, it would be unwise to make large bets on volatility predicting stock price changes.
+
+
 
 <!-- CONTACT -->
 ## Contact
@@ -152,6 +164,12 @@ Email: sean.steele.a@gmail.com
 ## Acknowledgements
 
 * Thanks to Don Steele for helping with sparking the ideas of the project.
+
+* References 
+	1. https://www.investopedia.com/ask/answers/021015/what-best-measure-given-stocks-volatility.asp
+	2. https://www.sparrowwealth.com/wp-content/uploads/2016/07/Can-Volatility-Predict-Returns.pdf
+	3. https://www.npr.org/2019/01/18/686450979/how-market-volatility-plays-into-the-fear-index
+	
 
 
 
