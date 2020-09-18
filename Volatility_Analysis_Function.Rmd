@@ -1,0 +1,600 @@
+---
+title: "Volitlity_Analysis_Function"
+author: "Sean Steele"
+date: "9/3/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Packages
+```{r}
+library(tidyverse)
+library(MASS)
+library(margins)
+```
+
+## Pre-required fucntions
+```{r}
+#DF1 is the stock DF, DF2 is the volatility DF, time is number of days per time group
+Volatility_Change_DF <- function(DF1, DF2, time){
+  #keep only every n days for each data frame equal to time grouping of interest
+  df1 <- DF1[seq(1,nrow(DF1), time),]
+  df2 <- DF2[seq(1,nrow(DF2), time),]
+  
+  #extract price and Volatility
+  Price <- df1$Close
+  Volatility <- df2$Close
+  
+  #calculate differences between each time frame
+  StockChange <- diff(Price) #non % difference OK; will be converted to binary response
+  VXChange <- diff(Volatility)
+  #convert to % change 
+  VXChange <- VXChange/Volatility[1:(length(Volatility)-1)]
+  
+  #extract volume and drop first entry (diff drops first entry)
+  Volume <- df1$Volume[2:nrow(df1)]
+  
+  #construct new data frame
+  New_DataFrame <- data.frame(StockChange,VXChange,Volume)
+  
+  #convert change in prices to binary response 
+  New_DataFrame$Change <- NA
+    for (i in 1:nrow(New_DataFrame)){
+    
+    if (New_DataFrame$StockChange[i] < 0){
+      New_DataFrame$Change[i] <- 0 #zero if negative change
+    } else{ 
+      New_DataFrame$Change[i] <- 1 #one if positive change
+    }
+  }
+  return(New_DataFrame)
+}
+
+Volatility_DF <- function(DF1, DF2, time){
+  #keep only every n days for each data frame equal to time grouping of interest
+  df1 <- DF1[seq(1,nrow(DF1), time),]
+  df2 <- DF2[seq(1,nrow(DF2), time),]
+  
+  #extract price and Volatility
+  Price <- df1$Close
+  Volatility <- df2$Close
+  
+  #calculate differences between each time frame
+  StockChange <- diff(Price) #non % difference OK; will be converted to binary response
+  VXChange <- Volatility[2:length(Volatility)] #drop first entry
+  
+  
+  #extract volume and drop first entry (diff drops first entry)
+  Volume <- df1$Volume[2:nrow(df1)]
+  
+  #construct new data frame
+  New_DataFrame <- data.frame(StockChange,VXChange,Volume)
+  
+  #convert change in prices to binary response 
+  New_DataFrame$Change <- NA
+    for (i in 1:nrow(New_DataFrame)){
+    
+    if (New_DataFrame$StockChange[i] < 0){
+      New_DataFrame$Change[i] <- 0 #zero if negative change
+    } else{ 
+      New_DataFrame$Change[i] <- 1 #one if positive change
+    }
+  }
+  return(New_DataFrame)
+}
+## Function creates new data frame containing volume, VX, stock price, if the VX is at a specified cut off, and difference in stock price when VX is at or below a cut off n days after the VX hits/stays at the cut off
+
+
+## Shift the values of a column of data frame up by n
+#results in a lagging of values, first n observations lost  
+shift <- function(DF, n){ 
+  NewDF<- DF[-(seq(n)),] #delete n rows to cause shift up
+  #preserve original DF size
+  for (i in 1:n){
+    NewDF <- NewDF%>%
+      add_row()
+  }
+  return(NewDF)
+}
+
+
+## Function preps data into new data frame ready for regression to answer if a % change in VX signals a future %change in stock
+VX_jump<- function (Stock_DF, VX_DF, days_Stock, days_VX){
+  ## extract columns of interest from the data frames
+  Stock_Close <- Stock_DF$Close
+  Volume <- Stock_DF$Volume
+  VX_Close <- VX_DF$Close
+  
+
+  ## merge interested columns into new data frame
+  New_DF <- data.frame(Stock_Close,Volume,VX_Close)
+  
+  ## calculate % change in stock for the number of days ahead
+  New_DF$StockChange <- NA #will measure % change days in advance
+  for (i in (1:nrow(New_DF))){
+    New_DF$StockChange[i] <- (New_DF$Stock_Close[i+days_Stock] - New_DF$Stock_Close[i])/New_DF$Stock_Close[i]
+  }
+  ## calculate % change in VX for the number within number of days
+  New_DF$VXChange <- NA #will measure % change days in advance
+  for (i in (1:nrow(New_DF))){
+    New_DF$VXChange[i] <- (New_DF$VX_Close[i+days_VX] - New_DF$VX_Close[i])/New_DF$VX_Close[i]
+  }
+ 
+  ## Drop all rows which contain NA so group assignment can occur
+  # drop number of columns equal to which days_ is greatest
+  if (days_Stock > days_VX){
+    N <- days_Stock
+  } else{
+    N <- days_VX
+  }
+  New_DF <- New_DF[(1:(nrow(New_DF)-N)),]
+  
+  ## Assign grouping to VX movement
+  #group 1: -10% or more
+  #group 2: -2.5 to -10%
+  #group 3: -2.5 to +2.5% == Base Group
+  #group 4: 2.5 to 10%
+  #group 5: more than 10%
+  
+  #init empty columns for each group
+  New_DF$Group1 <- NA
+  New_DF$Group2 <- NA
+  New_DF$Group3 <- NA
+  New_DF$Group4 <- NA
+  New_DF$Group5 <- NA
+
+
+  #make assignments to groups in new variables 
+  #note no = included since unlikely any % VX changes will be exactly on the cutoff
+  New_DF$Group1 <- ifelse(New_DF$VXChange< -0.1, 1, 0)
+  New_DF$Group2 <- ifelse(New_DF$VXChange< -0.025 & New_DF$VXChange > -0.1 , 1, 0)
+  New_DF$Group3 <- ifelse(New_DF$VXChange> -0.025 & New_DF$VXChange < 0.025 , 1, 0)
+  New_DF$Group4 <- ifelse(New_DF$VXChange> 0.025 & New_DF$VXChange < 0.1 , 1, 0)
+  New_DF$Group5 <- ifelse(New_DF$VXChange> 0.1, 1, 0)
+
+  ## "Lag" the DF so that the VX difference groups line up to match n days ahead difference in stock prices
+  #extract VX change and groups into own vectors from New_DF
+  VXChange <- New_DF$VXChange
+  Group1 <- New_DF$Group1
+  Group2 <- New_DF$Group2
+  Group3 <- New_DF$Group3
+  Group4 <- New_DF$Group4
+  Group5 <- New_DF$Group5
+  
+  #New_DF2 made from New_DF cols 1:2, 4 (ie: only the stock data)
+  New_DF2 <- New_DF[,c(1,2, 4)]
+
+  #drop n rows, n = days_VX, then add back vectors above this lines up the upcomming stock changes with the preceding VX changes, IE: regression will show if the preceding VX predicts upcoming stock changes
+  New_DF3 <- as.data.frame(shift(New_DF2, days_VX))
+  #init empy vectors and add back
+  New_DF3$VXChange <- NA
+  New_DF3$Group1 <- NA
+  New_DF3$Group2 <- NA
+  New_DF3$Group3 <- NA
+  New_DF3$Group4 <- NA
+  New_DF3$Group5 <- NA
+
+  New_DF3$VXChange <- VXChange
+  New_DF3$Group1 <- Group1
+  New_DF3$Group2 <- Group2
+  New_DF3$Group3 <- Group3
+  New_DF3$Group4 <- Group4
+  New_DF3$Group5 <- Group5
+  
+  #add binary response for stock change neg or pos
+  New_DF3$Change <- NA
+  for (i in 1:(nrow(New_DF3)-days_VX)){ #need to not include last n day obs
+    if (New_DF3$StockChange[i] >= 0){
+      New_DF3$Change[i] <- 1 #increase n days later = 1
+    } else {
+      New_DF3$Change[i] <- 0 #decrease n days later = 0
+    }
+  }
+    
+  return(New_DF3)
+}
+
+
+#Logistic APE function: margins package cannot currently use the lag() function in R 4.0.2
+
+#SE bootstrap function
+SE_boot <- function(reps, data = PE_DF){
+  bootSE <- rep(NA, reps)
+  for (i in 1:reps){
+    bootSE[i] <- sd(sample(data, length(data), replace = TRUE))/sqrt(length(data))
+  }
+  SE <- mean(bootSE)
+  return(SE)
+}
+
+#APE function
+logis_APE <- function(Reg, DF=NA){
+  #store beta estimates in an object
+  beta_hat <- coef(Reg)
+  
+  #select correct beta hat and method;for regressions with 3 estimates: second beta is beta of interest and APE is from continuous variables, regression with more than 3 estimates beta 5 is of interest and APE is attainable with margins package
+  if (length(beta_hat) < 5){
+    #store PE in dataframe for bootstrapping
+    PE_DF <- c(beta_hat[2]*DF$VXChange[2:(length(predict(Reg, type = "link"))+1)]*dlogis(predict(Reg, type = "link"))) #2:length+1 since dlogis loses first entry
+    APE <- mean(PE_DF) #mean of partial effects = APE
+    SE <- SE_boot(reps = 2000, data = PE_DF) #See SE_boot function abaove
+  } else{
+    APE <- 99
+    SE <- 99
+  }
+  return(c(APE, SE))
+}
+
+# summary(margins(JumpReg_1.1, variables = "Group5"))
+# 
+# v<-logis_APE(JumpReg_1.1)
+# v
+# 
+# p<-logis_APE(reg_1day, aapl_1day)
+# p
+```
+
+
+## Main Function
+```{r}
+Vol_Analysis <- function(StockDF, VXDF){
+  ###Create empty results data frame to hold results for easy summary viewing
+  print("building results container...")
+  ResultsDF <- as.data.frame(matrix(nrow = 32, ncol = 7, dimnames = list(c("DeltaVol_Day1", "DeltaVol_Day5", "DeltaVol_Day10", "DeltaVol_Day20","dVol_Day1", "dVol_Day5", "dVol_Day10", "dVol_Day20", "RefGroup_1.1","RefGroup_5.1","RefGroup_10.1","RefGroup_20.1","RefGroup_1.5","RefGroup_5.5","RefGroup_10.5","RefGroup_20.5","RefGroup_1.10","RefGroup_5.10","RefGroup_10.10","RefGroup_20.10","Groups_1.1","Groups_5.1","Groups_10.1","Groups_20.1","Groups_1.5","Groups_5.5","Groups_10.5","Groups_20.5","Groups_1.10","Groups_5.10","Groups_10.10","Groups_20.10"), c("Estimate","delta_OR", "APE", "APE_SD", "Est_SD_Error","p-val", "Adjusted_P"))))
+  
+  ### Does an increase or decrease in change in volatility (ddVolatility) after N days, signal an upward or downward trend in stock price N days later on average? 
+  ##Make Data Frames
+  #N = 1, 3, 5, 10, and 20 days 
+  
+  print("building DeltaVol DFs...")
+  
+  DF_1day <- Volatility_Change_DF(StockDF, VXDF, 1)
+  DF_5day <- Volatility_Change_DF(StockDF, VXDF, 5)
+  DF_10day <- Volatility_Change_DF(StockDF, VXDF, 10)
+  DF_20day <- Volatility_Change_DF(StockDF, VXDF, 20)
+  ##Run Regressions
+  print("running DeltaVol regressions...")
+  Reg_1day <- glm(Change ~ lag(VXChange) + Volume, data = DF_1day, family = "binomial")
+  Reg_5day <- glm(Change ~ lag(VXChange) + Volume, data = DF_5day, family = "binomial")
+  Reg_10day <- glm(Change ~ lag(VXChange) + Volume, data = DF_10day, family = "binomial")
+  Reg_20day <- glm(Change ~ lag(VXChange) + Volume, data = DF_20day, family = "binomial")
+
+  print("storing DeltaVol...")
+  #Store summary results in 'deltaVol' list 
+  DeltaVol <- list(DeltaVol_day1 = summary(Reg_1day), 
+                   DeltaVol_day5 = summary(Reg_5day), 
+                   DeltaVol_day10 = summary(Reg_10day), 
+                   DeltaVol_day20 = summary(Reg_20day))
+  
+  #Store all values in ResultsDF data frame
+  for (i in 1:4){
+    ResultsDF[i, c(1, 5:6)] <- DeltaVol[[i]]$coefficients[2,c(1,2,4)]
+  }
+  
+  print("obtaining DeltaVol APEs...")
+  #Obtain APE with margins package, and store in ResultsDF
+  ResultsDF[1, 3:4] <- logis_APE((Reg_1day), DF_1day)
+  ResultsDF[2, 3:4] <- logis_APE((Reg_5day), DF_5day)
+  ResultsDF[3, 3:4] <- logis_APE((Reg_10day), DF_10day)
+  ResultsDF[4, 3:4] <- logis_APE((Reg_20day), DF_20day)
+  
+    
+  ### Does an increase or decrease in volatility (dVol) itself signal a change in stock price N days later?
+  ##Create Data Frames by subsetting VX changes to be > 0 from previously made DF
+  print("building dVol DFs...")
+  
+  VolDF_day1 <- Volatility_DF(StockDF, VXDF, 1)
+  VolDF_day5 <- Volatility_DF(StockDF, VXDF, 5)
+  VolDF_day10 <- Volatility_DF(StockDF, VXDF, 10)
+  VolDF_day20 <- Volatility_DF(StockDF, VXDF, 20)
+  
+  #Run Regressions
+  print("running dVol regressions...")
+  
+  VolReg_1day <- glm(Change ~ lag(VXChange) + Volume, data = VolDF_day1, family = "binomial")
+  VolReg_5day <- glm(Change ~ lag(VXChange) + Volume, data = VolDF_day5, family = "binomial")
+  VolReg_10day <- glm(Change ~ lag(VXChange) + Volume, data = VolDF_day10, family = "binomial")
+  VolReg_20day <- glm(Change ~ lag(VXChange) + Volume, data = VolDF_day20, family = "binomial")
+  #Store summary results in 'VolVol' list
+  print("storing VolVol...")
+  
+  dVol <- list(dVol_day1 = summary(VolReg_1day), 
+               dVol_day5 = summary(VolReg_5day), 
+               dVol_day10 = summary(VolReg_10day), 
+               dVol_day20 = summary(VolReg_20day))
+  
+  #Store all values in ResultsDF data frame
+  for (i in 1:4){
+    
+    ResultsDF[4 + i, c(1, 5:6)] <- dVol[[i]]$coefficients[2,c(1,2,4)]
+  }
+  
+
+  #Obtain APE with custom function, and store in ResultsDF
+  print("obtaining dVol APEs...")
+  
+  ResultsDF[5, 3:4] <- logis_APE((VolReg_1day), VolDF_day1)[1:2]
+  ResultsDF[6, 3:4] <- logis_APE((VolReg_5day), VolDF_day5)[1:2]
+  ResultsDF[7, 3:4] <- logis_APE((VolReg_10day), VolDF_day10)[1:2]
+  ResultsDF[8, 3:4] <- logis_APE((VolReg_20day), VolDF_day20)[1:2]
+  
+  ### Does short term large changes in VX predict changes in stock price?
+  #group 1: -10% or more
+  #group 2: -2.5 to -10%
+  #group 3: -2.5 to +2.5% == Reference Group
+  #group 4: 2.5 to 10%
+  #group 5: more than 10%
+
+
+  ##Create Data Frames: ChangeDF_stock.VX
+  print("building changeDFs...")
+  
+  changeDF_1.1 <- VX_jump(StockDF, VXDF, 1, 1)
+  changeDF_5.1 <- VX_jump(StockDF, VXDF, 5, 1)
+  changeDF_10.1 <- VX_jump(StockDF, VXDF, 10, 1)
+  changeDF_20.1 <- VX_jump(StockDF, VXDF, 20, 1)
+  changeDF_1.5 <- VX_jump(StockDF, VXDF, 1, 5)
+  changeDF_5.5 <- VX_jump(StockDF, VXDF, 5, 5)
+  changeDF_10.5 <- VX_jump(StockDF, VXDF, 10, 5)
+  changeDF_20.5 <- VX_jump(StockDF, VXDF, 20, 5)
+  changeDF_1.10 <- VX_jump(StockDF, VXDF, 1, 10)
+  changeDF_5.10 <- VX_jump(StockDF, VXDF, 5, 10)
+  changeDF_10.10 <- VX_jump(StockDF, VXDF, 10, 10)
+  changeDF_20.10 <- VX_jump(StockDF, VXDF, 20, 10)
+
+  
+  ## Does the reference group pose any predictive power on the Pr(stock) will rise or fall?
+  print("running reference regressions...")
+
+  RefDF_1.1 <<- changeDF_1.1%>%
+    subset(VXChange > -0.025 & VXChange <0.025)
+  RefReg_1.1 <<- glm(Change ~ VXChange + Volume, data = RefDF_1.1, family = "binomial")
+
+  RefDF_5.1 <- changeDF_5.1%>%
+    subset(VXChange > -0.025 & VXChange <0.025)
+  RefReg_5.1 <- glm(Change ~ VXChange + Volume, data = RefDF_5.1, family = "binomial")
+  
+  RefDF_10.1 <- changeDF_10.1%>%
+    subset(VXChange > -0.025 & VXChange <0.025)
+  RefReg_10.1 <- glm(Change ~ VXChange + Volume, data = RefDF_10.1, family = "binomial")
+  
+  RefDF_20.1 <- changeDF_20.1%>%
+    subset(VXChange > -0.025 & VXChange <0.025)
+  RefReg_20.1 <- glm(Change ~ VXChange + Volume, data = RefDF_20.1, family = "binomial")
+  
+  RefDF_1.5 <- changeDF_1.5%>%
+    subset(VXChange > -0.025 & VXChange <0.025)
+  RefReg_1.5 <- glm(Change ~ VXChange + Volume, data = RefDF_1.5, family = "binomial")
+
+  RefDF_5.5 <- changeDF_5.5%>%
+    subset(VXChange > -0.025 & VXChange <0.025)
+  RefReg_5.5 <- glm(Change ~ VXChange + Volume, data = RefDF_5.5, family = "binomial")
+  
+  RefDF_10.5 <- changeDF_10.5%>%
+    subset(VXChange > -0.025 & VXChange <0.025)
+  RefReg_10.5 <- glm(Change ~ VXChange + Volume, data = RefDF_10.5, family = "binomial")
+  
+  RefDF_20.5 <- changeDF_20.5%>%
+    subset(VXChange > -0.025 & VXChange <0.025)
+  RefReg_20.5 <- glm(Change ~ VXChange + Volume, data = RefDF_20.5, family = "binomial")
+  
+  RefDF_1.10 <- changeDF_1.10%>%
+    subset(VXChange > -0.025 & VXChange <0.025)
+  RefReg_1.10 <- glm(Change ~ VXChange + Volume, data = RefDF_1.10, family = "binomial")
+
+  RefDF_5.10 <- changeDF_5.10%>%
+    subset(VXChange > -0.025 & VXChange <0.025)
+  RefReg_5.10 <- glm(Change ~ VXChange + Volume, data = RefDF_5.10, family = "binomial")
+  
+  RefDF_10.10 <- changeDF_10.10%>%
+    subset(VXChange > -0.025 & VXChange <0.025)
+  RefReg_10.10 <- glm(Change ~ VXChange + Volume, data = RefDF_10.10, family = "binomial")
+  
+  RefDF_20.10 <- changeDF_20.10%>%
+    subset(VXChange > -0.025 & VXChange <0.025)
+  RefReg_20.10 <- glm(Change ~ VXChange + Volume, data = RefDF_20.10, family = "binomial")
+  
+  #Store reference regressions in list 'RefRegs'
+  print("storing RefRegs...")
+  
+  RefRegs <- list(RefGroups_1.1 = summary(RefReg_1.1), 
+                  RefGroups_5.1 = summary(RefReg_5.1), 
+                  RefGroups_10.1 = summary(RefReg_10.1), 
+                  RefGroups_20.1 = summary(RefReg_20.1), 
+                  RefGroups_1.5 = summary(RefReg_1.5), 
+                  RefGroups_5.5 = summary(RefReg_5.5), 
+                  RefGroups_10.5 = summary(RefReg_10.5), 
+                  RefGroups_20.5 = summary(RefReg_20.5),
+                  RefGroups_1.10 = summary(RefReg_1.10), 
+                  RefGroups_5.10 = summary(RefReg_5.10), 
+                  RefGroups_10.10 = summary(RefReg_10.10), 
+                  RefGroups_20.10 = summary(RefReg_20.10))
+  
+  #Store all values in ResultsDF data frame
+  for (i in 1:12){
+    ResultsDF[8 + i, c(1, 5:6)] <- RefRegs[[i]]$coefficients[2,c(1,2,4)]
+  }
+  
+  #Obtain APE with custom function, and store in ResultsDF
+  print("obtaining RefReg APEs...")
+  
+  ResultsDF[9, 3:4] <- summary(margins((RefReg_1.1)))[2,2:3]
+  ResultsDF[10, 3:4] <- summary(margins((RefReg_5.1)))[2,2:3]
+  ResultsDF[11, 3:4] <- summary(margins((RefReg_10.1)))[2,2:3]
+  ResultsDF[12, 3:4] <- summary(margins((RefReg_20.1)))[2,2:3]
+  ResultsDF[13, 3:4] <- summary(margins((RefReg_1.5)))[2,2:3]
+  ResultsDF[14, 3:4] <- summary(margins((RefReg_5.5)))[2,2:3]
+  ResultsDF[15, 3:4] <- summary(margins((RefReg_10.5)))[2,2:3]
+  ResultsDF[16, 3:4] <- summary(margins((RefReg_20.5)))[2,2:3]
+  ResultsDF[17, 3:4] <- summary(margins((RefReg_1.10)))[2,2:3]
+  ResultsDF[18, 3:4] <- summary(margins((RefReg_5.10)))[2,2:3]
+  ResultsDF[19, 3:4] <- summary(margins((RefReg_10.10)))[2,2:3]
+  ResultsDF[20, 3:4] <- summary(margins((RefReg_20.10)))[2,2:3]
+  
+  ## Do the other groups show any difference in predictive power on Pr(stock) changing
+  print("running group regressions...")
+  
+  JumpReg_1.1 <- glm(Change ~ Group1 + Group2 + Group4 + Group5 + Volume, data =changeDF_1.1, family = "binomial")
+  
+  JumpReg_5.1 <- glm(Change ~ Group1 + Group2 + Group4 + Group5 + Volume, data =changeDF_5.1, family = "binomial")
+  
+  JumpReg_10.1 <- glm(Change ~ Group1 + Group2 + Group4 + Group5 + Volume, data =changeDF_10.1, family = "binomial")
+  
+  JumpReg_20.1 <- glm(Change ~ Group1 + Group2 + Group4 + Group5 + Volume, data =changeDF_20.1, family = "binomial")
+  
+  JumpReg_1.5 <- glm(Change ~ Group1 + Group2 + Group4 + Group5 + Volume, data =changeDF_1.5, family = "binomial")
+  
+  JumpReg_5.5 <- glm(Change ~ Group1 + Group2 + Group4 + Group5 + Volume, data =changeDF_5.5, family = "binomial")
+  
+  JumpReg_10.5 <- glm(Change ~ Group1 + Group2 + Group4 + Group5 + Volume, data =changeDF_10.5, family = "binomial")
+  
+  JumpReg_20.5 <- glm(Change ~ Group1 + Group2 + Group4 + Group5 + Volume, data =changeDF_20.5, family = "binomial")
+
+  JumpReg_1.10 <- glm(Change ~ Group1 + Group2 + Group4 + Group5 + Volume, data =changeDF_1.10, family = "binomial")
+  
+  JumpReg_5.10 <- glm(Change ~ Group1 + Group2 + Group4 + Group5 + Volume, data =changeDF_5.10, family = "binomial")
+  
+  JumpReg_10.10 <- glm(Change ~ Group1 + Group2 + Group4 + Group5 + Volume, data =changeDF_10.10, family = "binomial")
+  
+  JumpReg_20.10 <- glm(Change ~ Group1 + Group2 + Group4 + Group5 + Volume, data =changeDF_20.10, family = "binomial")
+  #Store Results in 'JumpRegs' list
+  print("storing JumpRegs...")
+  
+  JumpRegs <- list(Groups_1.1 = summary(JumpReg_1.1), 
+                   Groups_5.1 = summary(JumpReg_5.1), 
+                   Groups_10.1 = summary(JumpReg_10.1), 
+                   Groups_20.1 = summary(JumpReg_20.1), 
+                   Groups_1.5 = summary(JumpReg_1.5), 
+                   Groups_5.5 = summary(JumpReg_5.5), 
+                   Groups_10.5 = summary(JumpReg_10.5), 
+                   Groups_20.5 = summary(JumpReg_20.5), 
+                   Groups_1.10 = summary(JumpReg_1.10), 
+                   Groups_5.10 = summary(JumpReg_5.10), 
+                   Groups_10.10 = summary(JumpReg_10.10), 
+                   Groups_20.10 = summary(JumpReg_20.10))
+  
+
+ 
+  #Store all values in ResultsDF data frame
+  for (i in 1:12){
+    ResultsDF[20 + i, c(1, 5:6)] <- JumpRegs[[i]]$coefficients[2,c(1,2,4)]
+  }  
+ 
+  #Obtain APE with margins package called in custom function, and store in ResultsDF
+  print("obtaining Group APEs...")
+  
+  ResultsDF[21, 3:4] <- summary(margins((JumpReg_1.1)))[4,2:3]
+  ResultsDF[22, 3:4] <- summary(margins((JumpReg_5.1)))[4,2:3]
+  ResultsDF[23, 3:4] <- summary(margins((JumpReg_10.1)))[4,2:3]
+  ResultsDF[24, 3:4] <- summary(margins((JumpReg_20.1)))[4,2:3]
+  ResultsDF[25, 3:4] <- summary(margins((JumpReg_1.5)))[4,2:3]
+  ResultsDF[26, 3:4] <- summary(margins((JumpReg_5.5)))[4,2:3]
+  ResultsDF[27, 3:4] <- summary(margins((JumpReg_10.5)))[4,2:3]
+  ResultsDF[28, 3:4] <- summary(margins((JumpReg_20.5)))[4,2:3]
+  ResultsDF[29, 3:4] <- summary(margins((JumpReg_1.10)))[4,2:3]
+  ResultsDF[30, 3:4] <- summary(margins((JumpReg_5.10)))[4,2:3]
+  ResultsDF[31, 3:4] <- summary(margins((JumpReg_10.10)))[4,2:3]
+  ResultsDF[32, 3:4] <- summary(margins((JumpReg_20.10)))[4,2:3]
+  
+  ## Correct P-vals for multiple testing in ResultsDF
+
+  #Note: corrections occur only within each hypothesis to preserve independence assumption of the correction. Bonferroni correction chosen for high penalty given monetary cost for a false positive 
+  print("ajusting P-vals...")
+  
+  ResultsDF$Adjusted_P[1:4] <- p.adjust(ResultsDF[1:4, 6],method = "bonferroni")
+  ResultsDF$Adjusted_P[5:8] <- p.adjust(ResultsDF[5:8, 6],method = "bonferroni")
+  ResultsDF$Adjusted_P[9:20] <- p.adjust(ResultsDF[9:20, 6],method = "bonferroni")
+  ResultsDF$Adjusted_P[21:32] <- p.adjust(ResultsDF[21:32, 6],method = "bonferroni")
+  
+  #Display change in odds ratio in ResultsDF
+  ResultsDF$delta_OR <- exp(ResultsDF$Estimate)
+
+  ### store all saved results in their own lists, into RETURN list to be returned by function
+  RETURN <- list(DeltaVol = DeltaVol, dVol = dVol, RefGroup = RefRegs, Groups = JumpRegs, Results = ResultsDF)
+  options("scipen"=100) #do not print results in scientific notation  
+  
+  print("Complete!")
+  return(RETURN)
+  
+}
+```
+
+
+## Data
+```{r}
+#stocks
+aapl <- read.csv("AAPL_Price.csv") #apple
+russ <- read.csv("Russel2000.csv") #russel 2000
+NasDaq <- read.csv("IXIC.csv") #Nasdaq
+dji <- read.csv("DJI.csv")  #Dow Jones 
+goog <- read.csv("GOOG.csv") #Google
+amzn <- read.csv("AMZN.csv") #Amazon
+ibm <- read.csv("IBM.csv") #IBM
+gs <- read.csv("GS.csv") #Goldman Sachs
+ 
+#VXs
+APLVX <- read.csv("vxapldailyprices.csv")
+RVX <- read.csv("rvxdailyprices.csv")
+VXN <- read.csv("vxncurrent.csv")
+VXD <- read.csv("vxdohlcprices.csv")
+VXAZN <- read.csv("vxazndailyprices.csv")
+VXGOG <- read.csv("vxgogdailyprices.csv")
+VXIBM <- read.csv("vxibmdailyprices.csv")
+VXGS <- read.csv("vxgsdailyprices.csv")
+
+```
+
+## Analysis 
+```{r}
+#Apple
+APL <- Vol_Analysis(aapl, APLVX)
+APL_Results <- APL$Results
+
+#Russel 2000
+RUSS <- Vol_Analysis(russ, RVX)
+RUSS_Results <- RUSS$Results
+
+#Nasdaq
+NASDQ <- Vol_Analysis(NasDaq, VXN)
+NASDQ_Results <- NASDQ$Results
+
+#Dow Jones
+DOWJ <- Vol_Analysis(dji, VXD)
+DOWJ_Results <- DOWJ$Results
+
+#Amazon
+AMZN <- Vol_Analysis(aapl, APLVX)
+AMZN_Results <- AMZN$Results
+
+#Google
+GOG <- Vol_Analysis(goog, VXGOG)
+GOG_Results <- GOG$Results
+
+#IBM
+IBM <- Vol_Analysis(ibm, VXIBM)
+IBM_Results <- IBM$Results
+
+#Goldman Sachs
+GS <- Vol_Analysis(gs, VXGS)
+GS_Results <- GS$Results
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
