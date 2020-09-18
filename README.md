@@ -150,7 +150,7 @@ The other 5 stocks analyzed do not return entirely consistent results between ea
 
 Of all of the stocks analyzed, only the Russel 2000 dVol_Day1, dVol_Day5, and dVol_Day10 regressions show significance and considerable odds ratios (0.994, 0.988, 0.985 per one unit increase in volatility respectively) and APE’s (-0.034, -0.071, -0.086 per one unit increase in volatility respectively). 
 
-In conclusion, the lack of a clear consistency of which regressions return significant as well as a general lack of real world substantiality to most of the regressions which did return significant, results in a failure to reject the overall hypothesis that volatility alone, when controlling for daily trade volume, cannot predict upwards and downwards trends in stock price. However, in some cases it is possible that changes in volatility may yield some predictive power, but as a whole, it would be unwise to make large bets on volatility predicting stock price changes.
+In conclusion, the lack of a clear consistency of which regressions return significant as well as a general lack of real world substantiality to most of the regressions which did return significant, results in a failure to reject the overall null hypothesis that volatility alone, when controlling for daily trade volume, does not predict upwards and downwards trends in stock price. However, in some cases it is possible that changes in volatility may yield some predictive power, but as a whole, it would be unwise to make large bets on volatility predicting stock price changes.
 
 
 
