@@ -50,7 +50,7 @@ See comments in RMD file and Function Dictionary for more details.
 
 ### Methodology
 
-The daily implied volatility data was from the freely available Cboe volatility indices for Apple, the Russel 2000, Nasdaq, Dow Jones Industrial Average, Google, Amazon, IBM, and Goldman Sachs. These data were chosen because they were both readily availed and because of the widespread use of Cboe volatility indices to measure market volatility. The matching daily stock and daily volume data came from Yahoo Finance.
+The daily implied volatility data was from the freely available Cboe volatility indices for Apple, the Russel 2000, Nasdaq, Dow Jones Industrial Average, Google, Amazon, IBM, and Goldman Sachs. These data were chosen because they were both readily available and because of the widespread use of Cboe volatility indices to measure market volatility. The matching daily stock and daily volume data came from Yahoo Finance.
 
 The bulk of the regression analysis for each stock was conducted with Logistic regressions, coding increases in stock price as Y = 1, and decreases as Y = 0. Further, logistic regressions were chosen over other regression techniques, such as linear regression, since the assumption of logistic regressions are less egregious in this context. For example, logistic regressions do not require linearity, homoscedasticity, or normally distributed errors, all of which are likely violated by these data. 
 
