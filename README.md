@@ -10,7 +10,7 @@ This project includes a function running and returning a series of 32 logistic r
   * [Requirements](#Requirements)
   * [Code Organization](#code-organization)
   * [Methodology](#Metholdology)
-  * [A note on P-value correction](#A-note-on-P-value-correction)
+  * [A note on P-value correction](#a-note-on-P-value-correction)
   * [Prerequired Functions](#prequired-functions)
   * [Main Function](#main-function)
 * [Results and Conclusion](#results-and-conclusion)
