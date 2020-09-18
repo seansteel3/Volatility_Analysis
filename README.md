@@ -28,7 +28,7 @@ Even so, indices such as the VIX have been called “the fear index”<sub>3 </s
 
 ### Requirements
 
-* R
+* R 4.0.3
 
 * R packages:
   * Tidyverse
