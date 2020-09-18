@@ -13,7 +13,7 @@ This project includes a function running and returning a series of 32 logistic r
   * [A note on P-value correction](#A-note-on-P-value-correction)
   * [Prerequired Functions](#prequired-functions)
   * [Main Function](#main-function)
-* [Results and Conclusion](#Results and Conclusion)
+* [Results and Conclusion](#results-and-conclusion)
 * [Contact](#contact)
 * [Acknowledgements](#acknowledgements)
 
