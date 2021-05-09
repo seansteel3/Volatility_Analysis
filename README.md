@@ -1,6 +1,6 @@
 # Volatility_Analysis
 
-This project includes a function running and returning a series of 32 logistic regressions assessing if volatility can predict future upward or downward trends in stock price. The results from the analysis of Apple, the Russel 2000, Nasdaq, Dow Jones Industrial Average, Google, Amazon, IBM, and Goldman Sachs indicate that volatility has highly limited, if any predictive power on stock trends in the context assessed.
+This project includes a function running and returning a series of 32 sequential logistic regressions assessing if volatility can predict future upward or downward trends in stock price. The results from the analysis of Apple, the Russel 2000, Nasdaq, Dow Jones Industrial Average, Google, Amazon, IBM, and Goldman Sachs indicate that volatility has highly limited, if any predictive power on stock trends in the context assessed.
 
 <!-- TABLE OF CONTENTS -->
 ## Table of Contents
